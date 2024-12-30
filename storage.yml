@@ -1,0 +1,39 @@
+---
+- name: Configure LVM
+  hosts: webservers
+
+  tasks:
+    - name: Maior que 600m
+      ansible.builtin.include_role:
+        role: redhat.rhel_system_roles.storage
+      vars:
+        storage_pools:
+        - name: research
+          type: lvm
+          volumes:
+            - name: data
+              size: 600m
+              fs_type: ext4
+              state: present 
+      when: ansible_facts['lvm'].vgs.research.size_g > "0.60" 
+
+   
+    - block:
+      - name: Insufficient spce left on VG
+        ansible.builtin.debug:
+          msg: "Insufficient VG space"
+
+      - name: Menor que 600m
+        ansible.builtin.include_role:
+          role: redhat.rhel_system_roles.storage
+        vars:
+          storage_pools:
+          - name: research
+            type: lvm
+            volumes:
+              - name: data
+                size: 400m
+                fs_type: ext4
+                state: present 
+      when: ansible_facts['lvm'].vgs.research.size_g < "0.60"
+
